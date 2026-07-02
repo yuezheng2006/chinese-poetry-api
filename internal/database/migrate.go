@@ -190,6 +190,106 @@ func (db *DB) migrateTablesForLang(lang Lang) error {
 	// Composite index for efficient multi-type random selection (type_id IN ... with id range lookups)
 	db.Exec(fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_%s_type_id ON %s(type_id, id)", poemTable, poemTable))
 
+	if err := db.migrateFtsForLang(lang); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// migrateFtsForLang creates the FTS5 virtual table (and sync triggers) that backs
+// full-text search for a poems table, then backfills it if it was just created.
+//
+// The table is a self-contained (not external-content) FTS5 index: content_text is
+// a derived value (the poem's paragraphs flattened out of poems.content, which is a
+// JSON array), not a literal column on the poems table, and FTS5's external-content
+// mode requires reading column values back from a same-named column on the linked
+// table. Duplicating the indexed text costs some extra disk space, but keeps the
+// index simple and correct. Triggers below keep it in sync with every
+// INSERT/UPDATE/DELETE on the poems table, including the ON CONFLICT upserts used
+// by the loader.
+//
+// The trigram tokenizer is used instead of the default unicode61 tokenizer because
+// Chinese text has no whitespace word boundaries, so the standard tokenizer can't
+// segment it meaningfully. Trigram indexing lets `col LIKE '%...%'` (arbitrary
+// substring queries, including single/double-character CJK terms) be accelerated by
+// the FTS index while keeping the exact same substring-match semantics the API
+// already exposes via SearchPoems.
+func (db *DB) migrateFtsForLang(lang Lang) error {
+	poemTable := poemsTable(lang)
+	ftsTable := poemsFtsTable(lang)
+
+	// Detect whether this is a brand-new table (needs a one-time backfill) or one
+	// that already existed (kept in sync incrementally by triggers, so a full
+	// rebuild would just be wasted work every time Migrate runs).
+	var existingCount int64
+	if err := db.Raw(
+		`SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = ?`, ftsTable,
+	).Scan(&existingCount).Error; err != nil {
+		return fmt.Errorf("failed to check for existing %s: %w", ftsTable, err)
+	}
+
+	ftsSQL := fmt.Sprintf(`CREATE VIRTUAL TABLE IF NOT EXISTS %s USING fts5(
+		title,
+		content_text,
+		tokenize='trigram'
+	)`, ftsTable)
+	if err := db.Exec(ftsSQL).Error; err != nil {
+		return fmt.Errorf(
+			"failed to create %s (requires SQLite built with FTS5 support, e.g. the sqlite_fts5 build tag): %w",
+			ftsTable, err,
+		)
+	}
+
+	// content_text is the plain concatenation of the poem's paragraphs, extracted
+	// from the JSON array stored in poems.content, so the index (and LIKE queries
+	// against it) match on readable text rather than raw JSON punctuation.
+	const contentTextExpr = `(SELECT COALESCE(group_concat(value, ''), '') FROM json_each(%s.content))`
+
+	insertTrigger := fmt.Sprintf(`CREATE TRIGGER IF NOT EXISTS %[2]s_fts_ai AFTER INSERT ON %[2]s BEGIN
+		INSERT INTO %[1]s(rowid, title, content_text)
+		VALUES (new.id, new.title, `+fmt.Sprintf(contentTextExpr, "new")+`);
+	END`, ftsTable, poemTable)
+	if err := db.Exec(insertTrigger).Error; err != nil {
+		return fmt.Errorf("failed to create insert trigger for %s: %w", ftsTable, err)
+	}
+
+	// Note: the fts5 special "INSERT INTO fts(fts, rowid, ...) VALUES ('delete', ...)"
+	// marker syntax only applies to external-content tables; this table is
+	// self-contained (see comment above), so removal is a plain DELETE by rowid.
+	deleteTrigger := fmt.Sprintf(`CREATE TRIGGER IF NOT EXISTS %[2]s_fts_ad AFTER DELETE ON %[2]s BEGIN
+		DELETE FROM %[1]s WHERE rowid = old.id;
+	END`, ftsTable, poemTable)
+	if err := db.Exec(deleteTrigger).Error; err != nil {
+		return fmt.Errorf("failed to create delete trigger for %s: %w", ftsTable, err)
+	}
+
+	updateTrigger := fmt.Sprintf(`CREATE TRIGGER IF NOT EXISTS %[2]s_fts_au AFTER UPDATE ON %[2]s BEGIN
+		DELETE FROM %[1]s WHERE rowid = old.id;
+		INSERT INTO %[1]s(rowid, title, content_text)
+		VALUES (new.id, new.title, `+fmt.Sprintf(contentTextExpr, "new")+`);
+	END`, ftsTable, poemTable)
+	if err := db.Exec(updateTrigger).Error; err != nil {
+		return fmt.Errorf("failed to create update trigger for %s: %w", ftsTable, err)
+	}
+
+	// Backfill only on first creation: existing rows predate the triggers, but a
+	// table that already existed is already up to date, so skip the (expensive,
+	// full-corpus) rebuild on every subsequent migration run.
+	//
+	// FTS5's built-in 'rebuild' command only works when the fts5 table's columns
+	// share names with real columns on the content table, which content_text
+	// (a derived expression, not a stored column) does not, so backfill manually
+	// with the same expression the triggers use.
+	if existingCount == 0 {
+		backfillSQL := fmt.Sprintf(`INSERT INTO %[1]s(rowid, title, content_text)
+			SELECT id, title, `+fmt.Sprintf(contentTextExpr, poemTable)+`
+			FROM %[2]s`, ftsTable, poemTable)
+		if err := db.Exec(backfillSQL).Error; err != nil {
+			return fmt.Errorf("failed to backfill %s: %w", ftsTable, err)
+		}
+	}
+
 	return nil
 }
 

@@ -67,8 +67,18 @@ func PoetryTypesTable(lang Lang) string {
 	return "poetry_types_zh_hans"
 }
 
+// PoemsFtsTable returns the FTS5 virtual table name backing full-text search
+// for the given language's poems table
+func PoemsFtsTable(lang Lang) string {
+	if lang == LangHant {
+		return "poems_fts_zh_hant"
+	}
+	return "poems_fts_zh_hans"
+}
+
 // Internal lowercase versions for use within this package
 func poemsTable(lang Lang) string       { return PoemsTable(lang) }
 func authorsTable(lang Lang) string     { return AuthorsTable(lang) }
 func dynastiesTable(lang Lang) string   { return DynastiesTable(lang) }
 func poetryTypesTable(lang Lang) string { return PoetryTypesTable(lang) }
+func poemsFtsTable(lang Lang) string    { return PoemsFtsTable(lang) }

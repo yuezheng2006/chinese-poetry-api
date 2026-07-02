@@ -58,7 +58,7 @@ git clone --recurse-submodules --depth=1 https://github.com/palemoky/chinese-poe
 如果已经克隆了仓库，可以单独更新 submodules：
 
 ```bash
-git submodule update --init
+git submodule update --init --depth 1
 ```
 
 ## API 使用

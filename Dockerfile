@@ -18,6 +18,7 @@ COPY internal/ internal/
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
     CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo \
+    -tags sqlite_fts5 \
     -ldflags "-extldflags '-static' -s -w" \
     -trimpath \
     -o server ./cmd/server

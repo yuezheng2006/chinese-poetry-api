@@ -10,6 +10,9 @@ SERVER_BINARY := $(BINARY_DIR)/server
 DATA_DIR := data
 POETRY_DATA_DIR := poetry-data
 GO_BUILD_FLAGS := CGO_ENABLED=1
+# sqlite_fts5 enables FTS5 (and the trigram tokenizer) in mattn/go-sqlite3, required
+# by the full-text search index created in internal/database/migrate.go
+GO_TAGS := sqlite_fts5
 
 # 自动检测CPU核心数
 NPROCS := $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
@@ -85,14 +88,14 @@ build: build-processor build-server
 build-processor:
 	@echo "$(BLUE)构建数据处理器...$(NC)"
 	@mkdir -p $(BINARY_DIR)
-	@$(GO_BUILD_FLAGS) go build -o $(PROCESSOR_BINARY) ./cmd/processor
+	@$(GO_BUILD_FLAGS) go build -tags $(GO_TAGS) -o $(PROCESSOR_BINARY) ./cmd/processor
 	@echo "$(GREEN)✓ 处理器构建完成: $(PROCESSOR_BINARY)$(NC)"
 
 ## build-server: 构建API服务器
 build-server:
 	@echo "$(BLUE)构建API服务器...$(NC)"
 	@mkdir -p $(BINARY_DIR)
-	@$(GO_BUILD_FLAGS) go build -o $(SERVER_BINARY) ./cmd/server
+	@$(GO_BUILD_FLAGS) go build -tags $(GO_TAGS) -o $(SERVER_BINARY) ./cmd/server
 	@echo "$(GREEN)✓ 服务器构建完成: $(SERVER_BINARY)$(NC)"
 
 ## clean: 清理构建产物
@@ -135,19 +138,19 @@ lint:
 ## test: 运行测试
 test:
 	@echo "$(BLUE)运行测试...$(NC)"
-	@$(GO_BUILD_FLAGS) go test -v ./...
+	@$(GO_BUILD_FLAGS) go test -tags $(GO_TAGS) -v ./...
 
 ## test-verbose: 运行测试（详细输出）
 test-verbose:
 	@echo "$(BLUE)运行测试（详细模式）...$(NC)"
-	@$(GO_BUILD_FLAGS) go test -v -race -coverprofile=coverage.out ./...
+	@$(GO_BUILD_FLAGS) go test -tags $(GO_TAGS) -v -race -coverprofile=coverage.out ./...
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "$(GREEN)✓ 测试完成，覆盖率报告: coverage.html$(NC)"
 
 ## coverage: 生成测试覆盖率报告
 coverage:
 	@echo "$(BLUE)生成测试覆盖率报告...$(NC)"
-	@$(GO_BUILD_FLAGS) go test -coverprofile=coverage.out $$(go list ./... | grep -v '/generated')
+	@$(GO_BUILD_FLAGS) go test -tags $(GO_TAGS) -coverprofile=coverage.out $$(go list ./... | grep -v '/generated')
 	@echo ""
 	@echo "$(GREEN)📊 覆盖率详情:$(NC)"
 	@go tool cover -func=coverage.out
@@ -162,17 +165,17 @@ coverage:
 ## bench: 运行基准测试
 bench:
 	@echo "$(BLUE)运行基准测试...$(NC)"
-	@$(GO_BUILD_FLAGS) go test -bench=. -benchmem ./...
+	@$(GO_BUILD_FLAGS) go test -tags $(GO_TAGS) -bench=. -benchmem ./...
 
 ## fuzz: 运行模糊测试
 fuzz:
 	@echo "$(BLUE)运行模糊测试...$(NC)"
 	@echo "$(YELLOW)测试 classifier 包...$(NC)"
-	@$(GO_BUILD_FLAGS) go test -fuzz='^FuzzToTraditional$$' -fuzztime=10s ./internal/classifier/ || true
-	@$(GO_BUILD_FLAGS) go test -fuzz='^FuzzToSimplified$$' -fuzztime=10s ./internal/classifier/ || true
-	@$(GO_BUILD_FLAGS) go test -fuzz='^FuzzClassifyPoetryType$$' -fuzztime=10s ./internal/classifier/ || true
+	@$(GO_BUILD_FLAGS) go test -tags $(GO_TAGS) -fuzz='^FuzzToTraditional$$' -fuzztime=10s ./internal/classifier/ || true
+	@$(GO_BUILD_FLAGS) go test -tags $(GO_TAGS) -fuzz='^FuzzToSimplified$$' -fuzztime=10s ./internal/classifier/ || true
+	@$(GO_BUILD_FLAGS) go test -tags $(GO_TAGS) -fuzz='^FuzzClassifyPoetryType$$' -fuzztime=10s ./internal/classifier/ || true
 	@echo "$(YELLOW)测试 search 包...$(NC)"
-	@$(GO_BUILD_FLAGS) go test -fuzz='^FuzzIsPinyinQuery$$' -fuzztime=10s ./internal/search/ || true
+	@$(GO_BUILD_FLAGS) go test -tags $(GO_TAGS) -fuzz='^FuzzIsPinyinQuery$$' -fuzztime=10s ./internal/search/ || true
 	@echo "$(GREEN)✓ 模糊测试完成$(NC)"
 
 ## graphql-gen: 生成GraphQL代码
