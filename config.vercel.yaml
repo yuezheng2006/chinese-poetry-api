@@ -1,0 +1,25 @@
+server:
+  port: 80  # Vercel 默认使用 80 端口（会被 PORT 环境变量覆盖）
+  mode: release  # debug, release, test
+
+database:
+  # Connection pool settings (0 = auto-detect based on CPU cores)
+  max_open_conns: 0  # 0 = auto (推荐), 或手动设置
+  max_idle_conns: 0  # 0 = auto (推荐), 或手动设置
+
+rate_limit:
+  enabled: true
+  requests_per_second: 10
+  burst: 20
+
+graphql:
+  playground: false  # Vercel 生产环境建议关闭
+  introspection: true
+  complexity_limit: 1000
+  requests_per_second: 10
+  burst: 20
+  by_ip: true
+
+search:
+  max_results: 1000
+  default_page_size: 20

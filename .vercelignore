@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.gitmodules
+
+# Documentation
+*.md
+!VERCEL_DEPLOY.md
+docs/
+
+# Tests
+tests/
+*_test.go
+.golangci.yml
+.pre-commit-config.yaml
+
+# Development
+.env
+.env.example
+
+# Build artifacts
+*.db
+*.db.gz
+data/
+
+# Poetry data (will be downloaded at runtime)
+poetry-data/
+
+# Tools and scripts not needed in production
+tools/
+scripts/process_*.sh
+Makefile
+
+# Docker files (except Dockerfile.vercel)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# CI/CD
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
