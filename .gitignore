@@ -53,3 +53,4 @@ config.local.yaml
 # Load test results
 tests/load/results.json
 tests/load/*.har
+.vercel
