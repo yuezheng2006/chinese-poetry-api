@@ -23,41 +23,22 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     -trimpath \
     -o server ./cmd/server
 
-# Database download stage
-FROM alpine:latest AS db-downloader
-
-RUN apk add --no-cache curl gzip
-
-WORKDIR /tmp
-
-# Download database from GitHub releases
-ARG DB_VERSION=latest
-RUN curl -L -o poetry.db.gz \
-    "https://github.com/palemoky/chinese-poetry-api/releases/${DB_VERSION}/download/poetry.db.gz" && \
-    curl -L -o checksums.txt \
-    "https://github.com/palemoky/chinese-poetry-api/releases/${DB_VERSION}/download/checksums.txt" && \
-    sha256sum -c <(grep "poetry.db.gz" checksums.txt) && \
-    gunzip poetry.db.gz
-
 # Runtime stage
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates curl
+RUN apk add --no-cache ca-certificates curl gzip
 
 WORKDIR /app
-
-# Create data directory
-RUN mkdir -p data
 
 # Copy binary and config
 COPY --from=builder /build/server .
 COPY config.yaml .
 
-# Copy pre-downloaded database
-COPY --from=db-downloader /tmp/poetry.db ./data/poetry.db
+# Copy optimized startup script for Vercel
+COPY scripts/startup-vercel.sh ./startup.sh
 
-# Make server executable
-RUN chmod +x ./server
+# Make scripts executable
+RUN chmod +x ./startup.sh ./server
 
 # Environment variables for Vercel
 ENV GIN_MODE=release \
@@ -65,12 +46,12 @@ ENV GIN_MODE=release \
     RATE_LIMIT_RPS=10 \
     RATE_LIMIT_BURST=20
 
-# Vercel 自动注入 PORT 环境变量，默认为 80
+# Vercel 会自动注入 PORT 环境变量，默认为 80
 EXPOSE 80
 
 # Health check using $PORT environment variable
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT:-80}/api/v1/health || exit 1
 
-# Start server directly (no startup script needed)
-CMD ["./server"]
+# Use optimized startup script that starts server first
+CMD ["./startup.sh"]
