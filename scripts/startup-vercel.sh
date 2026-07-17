@@ -53,15 +53,20 @@ download_database() {
 
     echo "✓ Download verified"
 
-    # Extract database using gzip -d -c (more reliable than gunzip)
+    # Extract database using gunzip -f (force, overwrites if exists)
     echo "Extracting ${DB_FILE}..."
-    if ! gzip -d -c "${DB_GZ}" > "${DB_PATH}"; then
+    if ! gunzip -f "${DB_GZ}"; then
         echo "ERROR: Failed to extract database"
         rm -f "${DB_PATH}"
         return 1
     fi
 
-    # Verify extracted file is not empty
+    # Verify extracted file exists and is not empty
+    if [ ! -f "$DB_PATH" ]; then
+        echo "ERROR: Extracted database file not found"
+        return 1
+    fi
+
     if [ ! -s "$DB_PATH" ]; then
         echo "ERROR: Extracted database is empty"
         rm -f "${DB_PATH}"
@@ -71,9 +76,6 @@ download_database() {
     # Get file size for logging
     db_size=$(du -h "$DB_PATH" | cut -f1)
     echo "✓ Database extracted: $db_size"
-
-    # Clean up .gz file after successful extraction
-    rm -f "${DB_GZ}"
 
     echo "✓ Database ready: $DB_PATH"
     return 0
