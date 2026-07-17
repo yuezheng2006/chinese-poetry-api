@@ -53,17 +53,39 @@ download_database() {
 
     echo "✓ Download verified"
 
-    # Extract database
+    # Extract database using gzip -d -c (more reliable than gunzip)
     echo "Extracting ${DB_FILE}..."
-    gunzip -f "${DB_GZ}"
+    if ! gzip -d -c "${DB_GZ}" > "${DB_PATH}"; then
+        echo "ERROR: Failed to extract database"
+        rm -f "${DB_PATH}"
+        return 1
+    fi
+
+    # Verify extracted file is not empty
+    if [ ! -s "$DB_PATH" ]; then
+        echo "ERROR: Extracted database is empty"
+        rm -f "${DB_PATH}"
+        return 1
+    fi
+
+    # Get file size for logging
+    db_size=$(du -h "$DB_PATH" | cut -f1)
+    echo "✓ Database extracted: $db_size"
+
+    # Clean up .gz file after successful extraction
+    rm -f "${DB_GZ}"
 
     echo "✓ Database ready: $DB_PATH"
     return 0
 }
 
-# Check if database exists
-if [ ! -f "$DB_PATH" ]; then
-    echo "Database not found, downloading (with ${MAX_WAIT}s timeout for Vercel)..."
+# Check if database exists and has content
+if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
+    echo "✓ Database found: $DB_PATH"
+    db_size=$(du -h "$DB_PATH" | cut -f1)
+    echo "  Size: $db_size"
+else
+    echo "Database not found or empty, downloading (with ${MAX_WAIT}s timeout for Vercel)..."
 
     # Start download in background with timeout
     (
@@ -74,14 +96,14 @@ if [ ! -f "$DB_PATH" ]; then
     # Wait for download with timeout
     WAITED=0
     while [ $WAITED -lt $MAX_WAIT ]; do
-        if [ -f "$DB_PATH" ]; then
+        if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
             echo "✓ Database downloaded successfully in ${WAITED}s"
             break
         fi
 
         # Check if download process is still running
         if ! kill -0 $DOWNLOAD_PID 2>/dev/null; then
-            echo "⚠ Download process completed but database not found"
+            echo "⚠ Download process completed"
             break
         fi
 
@@ -91,14 +113,12 @@ if [ ! -f "$DB_PATH" ]; then
 
     # If database still doesn't exist after timeout, start server anyway
     # (it will create an empty DB, but at least server will be responsive)
-    if [ ! -f "$DB_PATH" ]; then
-        echo "⚠ Warning: Database not ready after ${MAX_WAIT}s, starting server with empty DB"
-        echo "⚠ Database will continue downloading in background"
+    if [ ! -f "$DB_PATH" ] || [ ! -s "$DB_PATH" ]; then
+        echo "⚠ Warning: Database not ready after ${MAX_WAIT}s"
+        echo "⚠ Starting server anyway (database will continue downloading in background)"
     fi
-else
-    echo "✓ Database found: $DB_PATH"
 fi
 
 # Start server (foreground)
-echo "Starting API server..."
+echo "Starting API server on port ${PORT:-80}..."
 exec ./server
