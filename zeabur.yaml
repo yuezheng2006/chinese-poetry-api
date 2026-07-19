@@ -1,0 +1,15 @@
+name: chinese-poetry-api
+
+services:
+  - name: api
+    source:
+      type: git
+    dockerfile: Dockerfile
+    ports:
+      - 1279
+    env:
+      PORT: 1279
+      GIN_MODE: release
+      RATE_LIMIT_ENABLED: true
+      RATE_LIMIT_RPS: 10
+      RATE_LIMIT_BURST: 20
