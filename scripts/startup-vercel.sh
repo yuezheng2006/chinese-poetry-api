@@ -7,7 +7,7 @@ DB_FILE="poetry.db"
 DB_PATH="${DATA_DIR}/${DB_FILE}"
 # Use Tencent Cloud COS for database storage (faster for China)
 COS_DB_URL="https://poetry-db-beijing-1251898568.cos.ap-beijing.myqcloud.com/poetry.db"
-MAX_WAIT=60  # Maximum seconds to wait for database before starting server (increased for large file)
+MAX_WAIT=5  # Maximum seconds to wait for database before starting server (quick start, download continues in background)
 
 echo "=== Chinese Poetry API Startup (Vercel Optimized) ==="
 
