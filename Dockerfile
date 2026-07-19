@@ -13,6 +13,7 @@ RUN go mod download
 # Copy only necessary source files
 COPY cmd/ cmd/
 COPY internal/ internal/
+COPY docs/ docs/
 
 # Build the server binary with optimizations and cache
 RUN --mount=type=cache,target=/root/.cache/go-build \
