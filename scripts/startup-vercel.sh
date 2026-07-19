@@ -5,77 +5,43 @@ set -e
 DATA_DIR="data"
 DB_FILE="poetry.db"
 DB_PATH="${DATA_DIR}/${DB_FILE}"
-DB_GZ="${DB_PATH}.gz"
-CHECKSUM_FILE="${DATA_DIR}/checksums.txt"
-GITHUB_RELEASE_URL="https://github.com/palemoky/chinese-poetry-api/releases/latest/download"
-MAX_WAIT=10  # Maximum seconds to wait for database before starting server
+# Use Tencent Cloud COS for database storage (faster for China)
+COS_DB_URL="https://poetry-db-beijing-1251898568.cos.ap-beijing.myqcloud.com/poetry.db"
+MAX_WAIT=60  # Maximum seconds to wait for database before starting server (increased for large file)
 
 echo "=== Chinese Poetry API Startup (Vercel Optimized) ==="
 
 # Create data directory if it doesn't exist
 mkdir -p "${DATA_DIR}"
 
-# Function to download and verify database
+# Function to download database from Tencent Cloud COS
 download_database() {
-    echo "Downloading database and checksums..."
+    echo "Downloading database from Tencent Cloud COS (Beijing)..."
+    echo "Source: ${COS_DB_URL}"
+    echo "Target: ${DB_PATH}"
 
-    # Download both files
-    if ! curl -Lfo "${DB_GZ}" "${GITHUB_RELEASE_URL}/${DB_FILE}.gz"; then
-        echo "ERROR: Failed to download database"
-        return 1
-    fi
-
-    if ! curl -Lfo "${CHECKSUM_FILE}" "${GITHUB_RELEASE_URL}/checksums.txt"; then
-        echo "ERROR: Failed to download checksums"
-        rm -f "${DB_GZ}"
-        return 1
-    fi
-
-    # Verify downloaded .gz file
-    echo "Verifying download integrity..."
-    expected_checksum=$(grep "${DB_FILE}.gz" "${CHECKSUM_FILE}" | awk '{print $1}')
-
-    if [ -z "$expected_checksum" ]; then
-        echo "ERROR: Could not find checksum for ${DB_FILE}.gz"
-        rm -f "${DB_GZ}" "${CHECKSUM_FILE}"
-        return 1
-    fi
-
-    actual_checksum=$(sha256sum "${DB_GZ}" | awk '{print $1}')
-
-    if [ "$actual_checksum" != "$expected_checksum" ]; then
-        echo "ERROR: Checksum mismatch!"
-        echo "  Expected: $expected_checksum"
-        echo "  Actual:   $actual_checksum"
-        rm -f "${DB_GZ}" "${CHECKSUM_FILE}"
-        return 1
-    fi
-
-    echo "✓ Download verified"
-
-    # Extract database using gunzip -f (force, overwrites if exists)
-    echo "Extracting ${DB_FILE}..."
-    if ! gunzip -f "${DB_GZ}"; then
-        echo "ERROR: Failed to extract database"
+    # Download database file directly (uncompressed)
+    if ! curl -Lfo "${DB_PATH}" "${COS_DB_URL}"; then
+        echo "ERROR: Failed to download database from COS"
         rm -f "${DB_PATH}"
         return 1
     fi
 
-    # Verify extracted file exists and is not empty
+    # Verify file exists and is not empty
     if [ ! -f "$DB_PATH" ]; then
-        echo "ERROR: Extracted database file not found"
+        echo "ERROR: Downloaded database file not found"
         return 1
     fi
 
     if [ ! -s "$DB_PATH" ]; then
-        echo "ERROR: Extracted database is empty"
+        echo "ERROR: Downloaded database is empty"
         rm -f "${DB_PATH}"
         return 1
     fi
 
     # Get file size for logging
     db_size=$(du -h "$DB_PATH" | cut -f1)
-    echo "✓ Database extracted: $db_size"
+    echo "✓ Database downloaded: $db_size"
 
     echo "✓ Database ready: $DB_PATH"
     return 0
