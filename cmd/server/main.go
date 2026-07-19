@@ -22,6 +22,24 @@ import (
 	"github.com/palemoky/chinese-poetry-api/internal/logger"
 )
 
+// @title           Chinese Poetry API
+// @version         1.0
+// @description     基于 Go 语言的高性能中国古诗词 API 服务，支持 REST 和 GraphQL 接口，提供 37 万+ 首古诗词数据（唐诗、宋词、元曲、诗经、楚辞等），支持简繁体中文切换、全文搜索。
+// @description     在线地址：https://poetry.zeabur.app
+// @termsOfService  https://github.com/yuezheng2006/chinese-poetry-api
+
+// @contact.name   API Support
+// @contact.url    https://github.com/yuezheng2006/chinese-poetry-api/issues
+// @contact.email  yuezheng2006@gmail.com
+
+// @license.name  MIT
+// @license.url   https://github.com/yuezheng2006/chinese-poetry-api/blob/main/LICENSE
+
+// @host      poetry.zeabur.app
+// @BasePath  /api/v1
+// @schemes   https
+
+
 // Defining the Graphql handler
 func graphqlHandler(resolver *graph.Resolver) gin.HandlerFunc {
 	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolver}))

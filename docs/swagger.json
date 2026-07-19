@@ -1,0 +1,724 @@
+{
+    "schemes": [
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "基于 Go 语言的高性能中国古诗词 API 服务，支持 REST 和 GraphQL 接口，提供 37 万+ 首古诗词数据（唐诗、宋词、元曲、诗经、楚辞等），支持简繁体中文切换、全文搜索。\n在线地址：https://poetry.zeabur.app",
+        "title": "Chinese Poetry API",
+        "termsOfService": "https://github.com/yuezheng2006/chinese-poetry-api",
+        "contact": {
+            "name": "API Support",
+            "url": "https://github.com/yuezheng2006/chinese-poetry-api/issues",
+            "email": "yuezheng2006@gmail.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://github.com/yuezheng2006/chinese-poetry-api/blob/main/LICENSE"
+        },
+        "version": "1.0"
+    },
+    "host": "poetry.zeabur.app",
+    "basePath": "/api/v1",
+    "paths": {
+        "/authors": {
+            "get": {
+                "description": "分页获取作者列表，按作品数降序排列",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "作者"
+                ],
+                "summary": "作者列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "zh-Hans",
+                        "description": "语言",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_rest_handler.PaginatedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/authors/{id}": {
+            "get": {
+                "description": "根据 ID 获取作者详细信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "作者"
+                ],
+                "summary": "作者详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "作者 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "zh-Hans",
+                        "description": "语言",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/dynasties": {
+            "get": {
+                "description": "获取所有朝代及其诗词/作者统计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "朝代"
+                ],
+                "summary": "朝代列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "zh-Hans",
+                        "description": "语言",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/dynasties/{id}": {
+            "get": {
+                "description": "根据 ID 获取朝代详细信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "朝代"
+                ],
+                "summary": "朝代详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "朝代 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "zh-Hans",
+                        "description": "语言",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "检查 API 服务及数据库连接状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "基础"
+                ],
+                "summary": "健康检查",
+                "responses": {
+                    "200": {
+                        "description": "healthy",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "unhealthy",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/poems": {
+            "get": {
+                "description": "分页获取诗词列表，支持简繁体切换",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "诗词"
+                ],
+                "summary": "诗词列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "zh-Hans",
+                        "description": "语言 zh-Hans|zh-Hant",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_rest_handler.PaginatedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/poems/random": {
+            "get": {
+                "description": "随机返回一首诗词，支持按作者/朝代/类型过滤，以及飞花令单字搜索",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "诗词"
+                ],
+                "summary": "随机诗词",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "作者 ID",
+                        "name": "author_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "作者名",
+                        "name": "author",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "类型 ID（可多个）",
+                        "name": "type_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "类型名（可多个）",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "朝代 ID",
+                        "name": "dynasty_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "朝代名",
+                        "name": "dynasty",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "飞花令：单字搜索（与其它过滤互斥）",
+                        "name": "char",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "zh-Hans",
+                        "description": "语言",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/poems/search": {
+            "get": {
+                "description": "根据关键词搜索诗词（支持全文/标题/内容/作者）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "诗词"
+                ],
+                "summary": "搜索诗词",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "搜索关键词",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "all",
+                        "description": "搜索类型 all|title|content|author",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "zh-Hans",
+                        "description": "语言",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_rest_handler.PaginatedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/stats": {
+            "get": {
+                "description": "获取诗词数据库的统计信息（总数、按朝代/类型分布）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "基础"
+                ],
+                "summary": "统计信息",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_palemoky_chinese-poetry-api_internal_database.Statistics"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/types": {
+            "get": {
+                "description": "获取所有诗词类型（五绝/七绝/五律/七律/宋词/元曲等）及其统计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "类型"
+                ],
+                "summary": "诗词类型列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "zh-Hans",
+                        "description": "语言",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/types/{id}": {
+            "get": {
+                "description": "根据 ID 获取诗词类型详细信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "类型"
+                ],
+                "summary": "诗词类型详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "类型 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "zh-Hans",
+                        "description": "语言",
+                        "name": "lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_palemoky_chinese-poetry-api_internal_database.DynastyWithStats": {
+            "type": "object",
+            "properties": {
+                "author_count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "end_year": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "name_en": {
+                    "type": "string"
+                },
+                "poem_count": {
+                    "type": "integer"
+                },
+                "start_year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_palemoky_chinese-poetry-api_internal_database.PoetryTypeWithStats": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "chars_per_line": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lines": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "poem_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_palemoky_chinese-poetry-api_internal_database.Statistics": {
+            "type": "object",
+            "properties": {
+                "poems_by_dynasty": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_palemoky_chinese-poetry-api_internal_database.DynastyWithStats"
+                    }
+                },
+                "poems_by_type": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_palemoky_chinese-poetry-api_internal_database.PoetryTypeWithStats"
+                    }
+                },
+                "total_authors": {
+                    "type": "integer"
+                },
+                "total_dynasties": {
+                    "type": "integer"
+                },
+                "total_poems": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_rest_handler.PaginatedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "pagination": {
+                    "$ref": "#/definitions/internal_api_rest_handler.PaginationMeta"
+                }
+            }
+        },
+        "internal_api_rest_handler.PaginationMeta": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

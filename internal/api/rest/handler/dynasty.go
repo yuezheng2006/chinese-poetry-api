@@ -20,6 +20,16 @@ func NewDynastyHandler(repo *database.Repository) *DynastyHandler {
 
 // ListDynasties returns a list of dynasties
 // Supports ?lang=zh-Hans (default) or ?lang=zh-Hant
+//
+// @Summary      朝代列表
+// @Description  获取所有朝代及其诗词/作者统计
+// @Tags         朝代
+// @Accept       json
+// @Produce      json
+// @Param        lang  query  string  false  "语言"  default(zh-Hans)
+// @Success      200  {array}  map[string]any
+// @Failure      500  {object}  map[string]string
+// @Router       /dynasties [get]
 func (h *DynastyHandler) ListDynasties(c *gin.Context) {
 	lang := parseLang(c)
 	repo := h.repo.WithLang(lang)
@@ -40,6 +50,17 @@ func (h *DynastyHandler) ListDynasties(c *gin.Context) {
 
 // GetDynasty returns a specific dynasty by ID
 // Supports ?lang=zh-Hans (default) or ?lang=zh-Hant
+//
+// @Summary      朝代详情
+// @Description  根据 ID 获取朝代详细信息
+// @Tags         朝代
+// @Accept       json
+// @Produce      json
+// @Param        id    path  int     true  "朝代 ID"
+// @Param        lang  query string  false  "语言"  default(zh-Hans)
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]string
+// @Router       /dynasties/{id} [get]
 func (h *DynastyHandler) GetDynasty(c *gin.Context) {
 	lang := parseLang(c)
 	repo := h.repo.WithLang(lang)

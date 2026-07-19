@@ -2,7 +2,10 @@ package rest
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
+	_ "github.com/palemoky/chinese-poetry-api/docs" // swagger generated docs
 	"github.com/palemoky/chinese-poetry-api/internal/api/middleware"
 	"github.com/palemoky/chinese-poetry-api/internal/api/rest/handler"
 	"github.com/palemoky/chinese-poetry-api/internal/config"
@@ -57,6 +60,10 @@ func SetupRouter(cfg *config.Config, db *database.DB, repo *database.Repository)
 		v1.GET("/types", poetryTypeHandler.ListPoetryTypes)
 		v1.GET("/types/:id", poetryTypeHandler.GetPoetryType)
 	}
+
+	// Swagger UI - auto-generated API documentation
+	// Accessible at /swagger/index.html
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
 }

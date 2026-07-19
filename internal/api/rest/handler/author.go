@@ -20,6 +20,18 @@ func NewAuthorHandler(repo *database.Repository) *AuthorHandler {
 
 // ListAuthors returns a list of authors
 // Supports ?lang=zh-Hans (default) or ?lang=zh-Hant
+//
+// @Summary      作者列表
+// @Description  分页获取作者列表，按作品数降序排列
+// @Tags         作者
+// @Accept       json
+// @Produce      json
+// @Param        page        query  int     false  "页码"    default(1)
+// @Param        page_size   query  int     false  "每页数量"  default(20)
+// @Param        lang        query  string  false  "语言"    default(zh-Hans)
+// @Success      200  {object}  handler.PaginatedResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /authors [get]
 func (h *AuthorHandler) ListAuthors(c *gin.Context) {
 	lang := parseLang(c)
 	repo := h.repo.WithLang(lang)
@@ -47,6 +59,17 @@ func (h *AuthorHandler) ListAuthors(c *gin.Context) {
 
 // GetAuthor returns a specific author by ID
 // Supports ?lang=zh-Hans (default) or ?lang=zh-Hant
+//
+// @Summary      作者详情
+// @Description  根据 ID 获取作者详细信息
+// @Tags         作者
+// @Accept       json
+// @Produce      json
+// @Param        id    path  int     true  "作者 ID"
+// @Param        lang  query string  false  "语言"  default(zh-Hans)
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]string
+// @Router       /authors/{id} [get]
 func (h *AuthorHandler) GetAuthor(c *gin.Context) {
 	lang := parseLang(c)
 	repo := h.repo.WithLang(lang)

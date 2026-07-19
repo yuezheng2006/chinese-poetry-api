@@ -24,6 +24,18 @@ func NewPoemHandler(repo *database.Repository) *PoemHandler {
 
 // ListPoems retrieves a paginated list of poems
 // Supports ?lang=zh-Hans (default) or ?lang=zh-Hant
+//
+// @Summary      诗词列表
+// @Description  分页获取诗词列表，支持简繁体切换
+// @Tags         诗词
+// @Accept       json
+// @Produce      json
+// @Param        page        query  int     false  "页码"    default(1)
+// @Param        page_size   query  int     false  "每页数量"  default(20)
+// @Param        lang        query  string  false  "语言 zh-Hans|zh-Hant"  default(zh-Hans)
+// @Success      200  {object}  handler.PaginatedResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /poems [get]
 func (h *PoemHandler) ListPoems(c *gin.Context) {
 	lang := parseLang(c)
 	repo := h.repo.WithLang(lang)
@@ -49,6 +61,21 @@ func (h *PoemHandler) ListPoems(c *gin.Context) {
 }
 
 // SearchPoems searches for poems by query string
+//
+// @Summary      搜索诗词
+// @Description  根据关键词搜索诗词（支持全文/标题/内容/作者）
+// @Tags         诗词
+// @Accept       json
+// @Produce      json
+// @Param        q          query  string  true   "搜索关键词"
+// @Param        type       query  string  false  "搜索类型 all|title|content|author"  default(all)
+// @Param        page       query  int     false  "页码"      default(1)
+// @Param        page_size  query  int     false  "每页数量"   default(20)
+// @Param        lang       query  string  false  "语言"      default(zh-Hans)
+// @Success      200  {object}  handler.PaginatedResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /poems/search [get]
 func (h *PoemHandler) SearchPoems(c *gin.Context) {
 	lang := parseLang(c)
 	repo := h.repo.WithLang(lang)
@@ -90,6 +117,24 @@ var filterQueryKeys = []string{"author_id", "author", "type_id", "type", "dynast
 // char is only combinable with lang - not with author/type/dynasty filters,
 // since it selects poems via the FTS content index rather than the id-based
 // filters used elsewhere in this handler.
+//
+// @Summary      随机诗词
+// @Description  随机返回一首诗词，支持按作者/朝代/类型过滤，以及飞花令单字搜索
+// @Tags         诗词
+// @Accept       json
+// @Produce      json
+// @Param        author_id   query  int     false  "作者 ID"
+// @Param        author      query  string  false  "作者名"
+// @Param        type_id     query  []int   false  "类型 ID（可多个）"
+// @Param        type        query  []string false  "类型名（可多个）"
+// @Param        dynasty_id  query  int     false  "朝代 ID"
+// @Param        dynasty     query  string  false  "朝代名"
+// @Param        char        query  string  false  "飞花令：单字搜索（与其它过滤互斥）"
+// @Param        lang        query  string  false  "语言"  default(zh-Hans)
+// @Success      200  {object}  map[string]any
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /poems/random [get]
 func (h *PoemHandler) RandomPoem(c *gin.Context) {
 	lang := parseLang(c)
 	repo := h.repo.WithLang(lang)

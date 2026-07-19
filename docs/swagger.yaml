@@ -1,0 +1,487 @@
+basePath: /api/v1
+definitions:
+  github_com_palemoky_chinese-poetry-api_internal_database.DynastyWithStats:
+    properties:
+      author_count:
+        type: integer
+      created_at:
+        type: string
+      end_year:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      name_en:
+        type: string
+      poem_count:
+        type: integer
+      start_year:
+        type: integer
+    type: object
+  github_com_palemoky_chinese-poetry-api_internal_database.PoetryTypeWithStats:
+    properties:
+      category:
+        type: string
+      chars_per_line:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      lines:
+        type: integer
+      name:
+        type: string
+      poem_count:
+        type: integer
+    type: object
+  github_com_palemoky_chinese-poetry-api_internal_database.Statistics:
+    properties:
+      poems_by_dynasty:
+        items:
+          $ref: '#/definitions/github_com_palemoky_chinese-poetry-api_internal_database.DynastyWithStats'
+        type: array
+      poems_by_type:
+        items:
+          $ref: '#/definitions/github_com_palemoky_chinese-poetry-api_internal_database.PoetryTypeWithStats'
+        type: array
+      total_authors:
+        type: integer
+      total_dynasties:
+        type: integer
+      total_poems:
+        type: integer
+    type: object
+  internal_api_rest_handler.PaginatedResponse:
+    properties:
+      data: {}
+      pagination:
+        $ref: '#/definitions/internal_api_rest_handler.PaginationMeta'
+    type: object
+  internal_api_rest_handler.PaginationMeta:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+host: poetry.zeabur.app
+info:
+  contact:
+    email: yuezheng2006@gmail.com
+    name: API Support
+    url: https://github.com/yuezheng2006/chinese-poetry-api/issues
+  description: |-
+    基于 Go 语言的高性能中国古诗词 API 服务，支持 REST 和 GraphQL 接口，提供 37 万+ 首古诗词数据（唐诗、宋词、元曲、诗经、楚辞等），支持简繁体中文切换、全文搜索。
+    在线地址：https://poetry.zeabur.app
+  license:
+    name: MIT
+    url: https://github.com/yuezheng2006/chinese-poetry-api/blob/main/LICENSE
+  termsOfService: https://github.com/yuezheng2006/chinese-poetry-api
+  title: Chinese Poetry API
+  version: "1.0"
+paths:
+  /authors:
+    get:
+      consumes:
+      - application/json
+      description: 分页获取作者列表，按作品数降序排列
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - default: zh-Hans
+        description: 语言
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_rest_handler.PaginatedResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 作者列表
+      tags:
+      - 作者
+  /authors/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据 ID 获取作者详细信息
+      parameters:
+      - description: 作者 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: zh-Hans
+        description: 语言
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 作者详情
+      tags:
+      - 作者
+  /dynasties:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有朝代及其诗词/作者统计
+      parameters:
+      - default: zh-Hans
+        description: 语言
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 朝代列表
+      tags:
+      - 朝代
+  /dynasties/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据 ID 获取朝代详细信息
+      parameters:
+      - description: 朝代 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: zh-Hans
+        description: 语言
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 朝代详情
+      tags:
+      - 朝代
+  /health:
+    get:
+      description: 检查 API 服务及数据库连接状态
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: healthy
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: unhealthy
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 健康检查
+      tags:
+      - 基础
+  /poems:
+    get:
+      consumes:
+      - application/json
+      description: 分页获取诗词列表，支持简繁体切换
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - default: zh-Hans
+        description: 语言 zh-Hans|zh-Hant
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_rest_handler.PaginatedResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 诗词列表
+      tags:
+      - 诗词
+  /poems/random:
+    get:
+      consumes:
+      - application/json
+      description: 随机返回一首诗词，支持按作者/朝代/类型过滤，以及飞花令单字搜索
+      parameters:
+      - description: 作者 ID
+        in: query
+        name: author_id
+        type: integer
+      - description: 作者名
+        in: query
+        name: author
+        type: string
+      - collectionFormat: csv
+        description: 类型 ID（可多个）
+        in: query
+        items:
+          type: integer
+        name: type_id
+        type: array
+      - collectionFormat: csv
+        description: 类型名（可多个）
+        in: query
+        items:
+          type: string
+        name: type
+        type: array
+      - description: 朝代 ID
+        in: query
+        name: dynasty_id
+        type: integer
+      - description: 朝代名
+        in: query
+        name: dynasty
+        type: string
+      - description: 飞花令：单字搜索（与其它过滤互斥）
+        in: query
+        name: char
+        type: string
+      - default: zh-Hans
+        description: 语言
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 随机诗词
+      tags:
+      - 诗词
+  /poems/search:
+    get:
+      consumes:
+      - application/json
+      description: 根据关键词搜索诗词（支持全文/标题/内容/作者）
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: all
+        description: 搜索类型 all|title|content|author
+        in: query
+        name: type
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - default: zh-Hans
+        description: 语言
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api_rest_handler.PaginatedResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 搜索诗词
+      tags:
+      - 诗词
+  /stats:
+    get:
+      description: 获取诗词数据库的统计信息（总数、按朝代/类型分布）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_palemoky_chinese-poetry-api_internal_database.Statistics'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 统计信息
+      tags:
+      - 基础
+  /types:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有诗词类型（五绝/七绝/五律/七律/宋词/元曲等）及其统计
+      parameters:
+      - default: zh-Hans
+        description: 语言
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 诗词类型列表
+      tags:
+      - 类型
+  /types/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据 ID 获取诗词类型详细信息
+      parameters:
+      - description: 类型 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: zh-Hans
+        description: 语言
+        in: query
+        name: lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 诗词类型详情
+      tags:
+      - 类型
+schemes:
+- https
+swagger: "2.0"
